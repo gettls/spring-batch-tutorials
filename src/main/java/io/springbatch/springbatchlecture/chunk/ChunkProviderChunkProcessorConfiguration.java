@@ -11,7 +11,6 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -31,9 +30,9 @@ import org.springframework.objenesis.instantiator.basic.NewInstanceInstantiator;
 
 import lombok.RequiredArgsConstructor;
 
-//@Configuration
+@Configuration
 @RequiredArgsConstructor
-public class ChunkOrientedTaskletConfiguration {
+public class ChunkProviderChunkProcessorConfiguration {
 
 	private final JobBuilderFactory jobBuilderFactory;
 	private final StepBuilderFactory stepBuilderFactory;
@@ -45,23 +44,24 @@ public class ChunkOrientedTaskletConfiguration {
 				.next(step2())
 				.build();
 	}
-	
 	@Bean
-	@JobScope
-	public Step step1() {
+	public Step step1 () {
 		return stepBuilderFactory.get("step1")
-				.<String, String>chunk(2)
+				.<String, String>chunk(5)
 				.reader(new ListItemReader<>(Arrays.asList("item1", "item2", "item3", "item4", "item5")))
 				.processor(new ItemProcessor<String, String>() { // <Input, Output>
 					@Override
 					public String process(String item) throws Exception {
-						return "my_" + item;
+						Thread.sleep(300);
+						System.out.println("item = " + item);
+						return "my" + item;
 					} 
 				})
 				.writer(new ItemWriter<String>() {
 					@Override
 					public void write(List<? extends String> items) throws Exception {
-						items.forEach(item -> System.out.println(item));
+						Thread.sleep(300);
+						System.out.println("items = " + items);
 					}
 				})
 				.build();

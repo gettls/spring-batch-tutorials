@@ -11,7 +11,6 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -21,6 +20,7 @@ import org.springframework.batch.core.step.job.DefaultJobParametersExtractor;
 import org.springframework.batch.core.step.job.JobParametersExtractor;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 
 //@Configuration
 @RequiredArgsConstructor
-public class ChunkOrientedTaskletConfiguration {
+public class ItemReader_ItemWriter_ItemProcessorConfiguration {
 
 	private final JobBuilderFactory jobBuilderFactory;
 	private final StepBuilderFactory stepBuilderFactory;
@@ -45,26 +45,31 @@ public class ChunkOrientedTaskletConfiguration {
 				.next(step2())
 				.build();
 	}
+	@Bean
+	public Step step1 () {
+		return stepBuilderFactory.get("step1")
+				.<Customer, Customer>chunk(3)
+				.reader(itemReader())
+				.processor(itemProcessor())
+				.writer(itemWriter())
+				.build();
+	}
 	
 	@Bean
-	@JobScope
-	public Step step1() {
-		return stepBuilderFactory.get("step1")
-				.<String, String>chunk(2)
-				.reader(new ListItemReader<>(Arrays.asList("item1", "item2", "item3", "item4", "item5")))
-				.processor(new ItemProcessor<String, String>() { // <Input, Output>
-					@Override
-					public String process(String item) throws Exception {
-						return "my_" + item;
-					} 
-				})
-				.writer(new ItemWriter<String>() {
-					@Override
-					public void write(List<? extends String> items) throws Exception {
-						items.forEach(item -> System.out.println(item));
-					}
-				})
-				.build();
+	public ItemReader<Customer> itemReader(){
+		return new CustomItemReader(Arrays.asList(
+				new Customer("user1"),
+				new Customer("user2"),
+				new Customer("user3"),
+				new Customer("user4")));
+	}
+	@Bean
+	public ItemProcessor<? super Customer, ? extends Customer> itemProcessor(){
+		return new CustomItemProcessor();
+	}
+	@Bean
+	public ItemWriter<? super Customer> itemWriter(){
+		return new CustomItemWriter();
 	}
 	
 	@Bean

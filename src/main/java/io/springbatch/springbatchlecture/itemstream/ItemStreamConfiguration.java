@@ -1,5 +1,6 @@
-package io.springbatch.springbatchlecture.chunk;
+package io.springbatch.springbatchlecture.itemstream;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +12,6 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -21,6 +21,7 @@ import org.springframework.batch.core.step.job.DefaultJobParametersExtractor;
 import org.springframework.batch.core.step.job.JobParametersExtractor;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -31,9 +32,9 @@ import org.springframework.objenesis.instantiator.basic.NewInstanceInstantiator;
 
 import lombok.RequiredArgsConstructor;
 
-//@Configuration
+@Configuration
 @RequiredArgsConstructor
-public class ChunkOrientedTaskletConfiguration {
+public class ItemStreamConfiguration {
 
 	private final JobBuilderFactory jobBuilderFactory;
 	private final StepBuilderFactory stepBuilderFactory;
@@ -45,26 +46,27 @@ public class ChunkOrientedTaskletConfiguration {
 				.next(step2())
 				.build();
 	}
-	
 	@Bean
-	@JobScope
 	public Step step1() {
 		return stepBuilderFactory.get("step1")
-				.<String, String>chunk(2)
-				.reader(new ListItemReader<>(Arrays.asList("item1", "item2", "item3", "item4", "item5")))
-				.processor(new ItemProcessor<String, String>() { // <Input, Output>
-					@Override
-					public String process(String item) throws Exception {
-						return "my_" + item;
-					} 
-				})
-				.writer(new ItemWriter<String>() {
-					@Override
-					public void write(List<? extends String> items) throws Exception {
-						items.forEach(item -> System.out.println(item));
-					}
-				})
+				.<String, String>chunk(5)
+				.reader(itemReader())
+				.writer(itemWriter())
 				.build();
+	}
+	
+	@Bean
+	public ItemWriter<? super String> itemWriter(){
+		return new CustomItemWriter();
+	}
+	
+	public CustomItemStreamReader itemReader() {
+		List<String> items = new ArrayList<>(10);
+		for(int i=0;i<10;i++) {
+			items.add(String.valueOf(i));
+		}
+		return new CustomItemStreamReader(items);
+		
 	}
 	
 	@Bean
