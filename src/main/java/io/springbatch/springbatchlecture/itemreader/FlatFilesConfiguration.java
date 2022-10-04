@@ -1,4 +1,4 @@
-package io.springbatch.springbatchlecture.itemstream;
+package io.springbatch.springbatchlecture.itemreader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,18 +23,25 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.file.transform.Range;
 import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.objenesis.instantiator.basic.NewInstanceInstantiator;
 
 import lombok.RequiredArgsConstructor;
 
 //@Configuration
 @RequiredArgsConstructor
-public class ItemStreamConfiguration {
+public class FlatFilesConfiguration {
 
 	private final JobBuilderFactory jobBuilderFactory;
 	private final StepBuilderFactory stepBuilderFactory;
@@ -51,22 +58,50 @@ public class ItemStreamConfiguration {
 		return stepBuilderFactory.get("step1")
 				.<String, String>chunk(5)
 				.reader(itemReader())
-				.writer(itemWriter())
+				.writer(null)
 				.build();
 	}
 	
-	@Bean
-	public ItemWriter<? super String> itemWriter(){
-		return new CustomItemWriter();
-	}
+//	@Bean
+//	public ItemReader itemReader() {
+//		FlatFileItemReader<Customer> itemReader = new FlatFileItemReader<>();
+//		itemReader.setResource(new ClassPathResource("/customer.csv"));
+//		
+//		DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
+//		lineMapper.setLineTokenizer(new DelimitedLineTokenizer());
+//		lineMapper.setFieldSetMapper(new CustomerFieldSetMapper());
+//		
+//		itemReader.setLineMapper(lineMapper);
+//		itemReader.setLinesToSkip(1);
+//		
+//		return itemReader;
+//	}
 	
-	public CustomItemStreamReader itemReader() {
-		List<String> items = new ArrayList<>(10);
-		for(int i=0;i<10;i++) {
-			items.add(String.valueOf(i));
-		}
-		return new CustomItemStreamReader(items);
-		
+//	@Bean
+//	public ItemReader itemReader() {
+//		return new FlatFileItemReaderBuilder<Customer>()
+//				.name("flatFile")
+//				.resource(new ClassPathResource("/customer.csv"))
+//				.fieldSetMapper(new CustomerFieldSetMapper())
+//				.linesToSkip(1)
+//				.delimited().delimiter(",")
+//				.names("name","age","year")
+//				.build();
+//	}
+	
+	public FlatFileItemReader itemReader() {
+		return new FlatFileItemReaderBuilder()
+				.name("flatFile")
+				.resource(new FileSystemResource("/customer.txt"))
+				.fieldSetMapper(new BeanWrapperFieldSetMapper<>())
+				.targetType(Customer.class)
+				.linesToSkip(1)
+				.fixedLength()
+				.addColumns(new Range(1, 5))
+				.addColumns(new Range(6, 9))
+				.addColumns(new Range(10, 11))
+				.names("name","year","age")
+				.build();
 	}
 	
 	@Bean
