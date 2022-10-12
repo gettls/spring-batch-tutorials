@@ -1,4 +1,4 @@
-package io.springbatch.springbatchlecture.repeat;
+package io.springbatch.springbatchlecture.반복및오류제어;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -9,9 +9,12 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.batch.repeat.CompletionPolicy;
 import org.springframework.batch.repeat.RepeatCallback;
 import org.springframework.batch.repeat.RepeatContext;
 import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.batch.repeat.exception.SimpleLimitExceptionHandler;
+import org.springframework.batch.repeat.policy.CompositeCompletionPolicy;
 import org.springframework.batch.repeat.policy.SimpleCompletionPolicy;
 import org.springframework.batch.repeat.policy.TimeoutTerminationPolicy;
 import org.springframework.batch.repeat.support.RepeatTemplate;
@@ -20,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
 
 import lombok.RequiredArgsConstructor;
 
-@Configuration
+//@Configuration
 @RequiredArgsConstructor
 public class RepeatConfiguration {
 
@@ -55,7 +58,15 @@ public class RepeatConfiguration {
 					public String process(String item) throws Exception {
 						
 //						repeatTemplate.setCompletionPolicy(new SimpleCompletionPolicy(3));
-						repeatTemplate.setCompletionPolicy(new TimeoutTerminationPolicy(3000));
+//						repeatTemplate.setCompletionPolicy(new TimeoutTerminationPolicy(3000));
+						
+						CompositeCompletionPolicy completionPolicy = new CompositeCompletionPolicy();
+						CompletionPolicy[] completionPolicies = new CompletionPolicy[] {new SimpleCompletionPolicy(3), new TimeoutTerminationPolicy(3000)};
+						
+						completionPolicy.setPolicies(completionPolicies);
+						repeatTemplate.setCompletionPolicy(completionPolicy);
+						
+						repeatTemplate.setExceptionHandler(simpleExceptionHandler());
 						
 						repeatTemplate.iterate(new RepeatCallback() {
 							@Override
@@ -63,7 +74,9 @@ public class RepeatConfiguration {
 								
 								System.out.println("repeatTemplate is testing");
 							
-								return RepeatStatus.CONTINUABLE;
+								throw new RuntimeException("Exception Handler test");
+								
+//								return RepeatStatus.CONTINUABLE;
 							}
 						});
 						
@@ -74,5 +87,9 @@ public class RepeatConfiguration {
 				.build();
 	}
 	
+	@Bean
+	public SimpleLimitExceptionHandler simpleExceptionHandler() {
+		return new SimpleLimitExceptionHandler(3);
+	}
 	
 }
