@@ -27,7 +27,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import lombok.RequiredArgsConstructor;
 
-@Configuration
+//@Configuration
 @RequiredArgsConstructor
 public class ItemReaderAdapterConfiguration {
 

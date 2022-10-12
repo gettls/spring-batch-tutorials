@@ -73,7 +73,6 @@ public class JdbcPagingConfiguration {
 		queryProvider.setFromClause("from customer");
 		queryProvider.setWhereClause("where firstname like :firstname");
 		
-		
 		Map<String, Order> sortKeys = new HashMap<>();
 		sortKeys.put("id", Order.ASCENDING);
 		
