@@ -31,7 +31,8 @@ public class ParalleleStepsConfiguration {
 		return jobBuilderFactory.get("job")
 				.incrementer(new RunIdIncrementer())
 				.start(flow1())
-				.split()
+				.split(taskExecutor()).add(flow2())
+				.end()
 				.listener(new StopWatchJobListener())
 				.build();
 	}
@@ -43,12 +44,25 @@ public class ParalleleStepsConfiguration {
 	
 	@Bean
 	public Flow flow1() {
-		
 		TaskletStep step = stepBuilderFactory.get("step1")
 				.tasklet(tasklet()).build();
 		
 		return new FlowBuilder<Flow>("flow1")
 				.start(step)
+				.build();
+	}
+	
+	@Bean
+	public Flow flow2() {
+		TaskletStep step2 = stepBuilderFactory.get("step2")
+				.tasklet(tasklet()).build();
+		
+		TaskletStep step3 = stepBuilderFactory.get("step3")
+				.tasklet(tasklet()).build();
+		
+		return new FlowBuilder<Flow>("flow1")
+				.start(step2)
+				.next(step3)
 				.build();
 	}
 	
